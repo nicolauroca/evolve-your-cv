@@ -134,7 +134,7 @@ Return in two parts, with this exact formatting, n language "{language}":
                 return response.choices[0].message.content, model
             else:
                 if response.error:
-                    raise Exception(str(response.error.message))
+                    raise Exception(str(response.error))
 
         except Exception as e:
             error_msg = str(e).lower()
