@@ -129,6 +129,9 @@ Return in two parts, with this exact formatting, n language "{language}":
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
             )
+
+            st.write(response)
+
             if response and hasattr(response, "choices") and response.choices:
                 return response.choices[0].message.content, model
             else:
