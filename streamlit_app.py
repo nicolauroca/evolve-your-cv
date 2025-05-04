@@ -42,6 +42,10 @@ texts = {
     }
 }
 
+def extract_text_from_pdf(file):
+    doc = fitz.open(stream=file.read(), filetype="pdf")
+    return "".join([page.get_text() for page in doc]).strip()
+
 # Session states
 if "cv_analyzed" not in st.session_state:
     st.session_state["cv_analyzed"] = False
@@ -79,10 +83,6 @@ FREE_MODELS = [
     "undi95/toppy-m-7b:free",
     "thebloke/zephyr-7b-beta-GGUF:free"
 ]
-
-def extract_text_from_pdf(file):
-    doc = fitz.open(stream=file.read(), filetype="pdf")
-    return "".join([page.get_text() for page in doc]).strip()
 
 def get_ai_recommendation(cv_text=None, linkedin_url=None):
     tone = {
