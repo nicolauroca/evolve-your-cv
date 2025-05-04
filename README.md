@@ -32,5 +32,5 @@ Sube tu CV o añade tu perfil de LinkedIn y deja que la IA haga el resto.
 
 1. Clona el repositorio:
 
-git clone https://github.com/tuusuario/evolve-your-cv.git
+git clone https://github.com/nicolauroca/evolve-your-cv.git
 cd evolve-your-cv
