@@ -67,7 +67,7 @@ def extract_text_from_pdf(file):
     return "".join([page.get_text() for page in doc]).strip()
 
 # AI RESPONSE FUNCTION
-def get_ai_recommendation(cv_text, linkedin_url=None):
+def get_ai_recommendation(cv_text=None, linkedin_url=None):
     tone = {
         "English": "friendly and professional, speaking directly to the user using 'you'",
         "Español": "profesional pero cercano, dirigiéndote al usuario de tú"
@@ -87,19 +87,21 @@ def get_ai_recommendation(cv_text, linkedin_url=None):
     prompt = f'''
 You are a career advisor. Be {tone}.
 Focus on {focus}.
-Analyze the following profile:
+Use recent and updated information.
 
-Resume:
-{cv_text}
+Analyze the following profile:
 
 {f"LinkedIn: {linkedin_url}" if linkedin_url else ""}
 
+{f"Resume: {cv_text}" if cv_text else ""}
+
 Return:
 1. Two possible and realistic career paths.
-2. Roles they could aim for soon with some improvement.
-3. Recommended training or courses (formal or informal).
-4. Estimated salary ranges (based on location or industry).
-5. Personalized advice to grow professionally.
+2. Two roles they could right now according to the resume and linkedin profile.
+3. Two roles they could aim for soon with some improvement.
+4. Recommended training or courses of each roles (formal or informal).
+5. Estimated salary ranges foe each roles (based on location or industry).
+6. Personalized advice to grow professionally according to the recommended roles.
 
 Answer in {language}.
 '''
@@ -120,13 +122,13 @@ Answer in {language}.
     raise RuntimeError("All models failed or quota exceeded.")
 
 # MAIN EXECUTION
-if uploaded_file:
+if uploaded_file or linkedin_url:
     with st.spinner(texts[language]["analyzing"]):
         try:
-            cv_text = extract_text_from_pdf(uploaded_file)
-            if len(cv_text) < 100:
-                st.warning(texts[language]["short"])
-            else:
+            if uploaded_file:
+                cv_text = extract_text_from_pdf(uploaded_file)
+                if len(cv_text) < 100:
+                    st.warning(texts[language]["short"])
                 result, model_used = get_ai_recommendation(cv_text, linkedin_url)
                 st.success(texts[language]["complete"])
                 st.markdown(texts[language]["recommendation"])
@@ -134,5 +136,3 @@ if uploaded_file:
                 st.markdown(result)
         except Exception as e:
             st.error(f"{texts[language]['error']} {e}")
-elif linkedin_url:
-    st.info(texts[language]["only_linkedin"])
