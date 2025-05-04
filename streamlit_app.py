@@ -1,4 +1,3 @@
-
 import streamlit as st
 import fitz  # PyMuPDF
 from openai import OpenAI
@@ -8,10 +7,13 @@ st.set_page_config(page_title="EvolveYourCV", layout="centered")
 
 st.title("📈 EvolveYourCV")
 
-# LANGUAGE SELECTION
-language = st.selectbox("🌍 Choose your language / Elige tu idioma", ["English", "Español"])
+# SELECCIÓN EN COLUMNAS
+col1, col2 = st.columns(2)
 
-# TEXTS
+with col1:
+    language = st.selectbox("🌍 Choose your language / Elige tu idioma", ["English", "Español"])
+
+# TEXTS (dependen del idioma elegido)
 texts = {
     "English": {
         "intro": "Upload your resume and let AI guide your next best career steps.",
@@ -42,6 +44,9 @@ texts = {
         "error": "❌ Error:",
     }
 }
+
+with col2:
+    growth_choice = st.radio(texts[language]["growth"], texts[language]["growth_options"])
 
 # SHOW UI
 st.markdown(texts[language]["intro"])
