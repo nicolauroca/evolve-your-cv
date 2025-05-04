@@ -109,7 +109,7 @@ When reading the profile:
 {f"LinkedIn: \"\"\"{linkedin_url}\"\"\"" if linkedin_url else ""}
 {f"Resume: \"\"\"{cv_text}\"\"\"" if cv_text else ""}
 
-Return in two parts, with this exact formatting:
+Return in two parts, with this exact formatting, n language "{language}":
 
 ## General Overview
 1. Two possible and realistic career paths.
@@ -172,7 +172,8 @@ pdf_bytes = uploaded_file.read() if uploaded_file else None
 
 # --- BOTÓN PARA LANZAR ANÁLISIS ---
 if st.button(texts[language]["run"]):
-    analyze_and_store()
+    with st.spinner(texts[language]["analyzing"]):
+        analyze_and_store()
 
 # --- MOSTRAR RESULTADOS ---
 if st.session_state["cv_analyzed"]:
