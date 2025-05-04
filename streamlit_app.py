@@ -7,12 +7,6 @@ st.set_page_config(page_title="EvolveYourCV", layout="centered")
 
 st.title("📈 EvolveYourCV")
 
-# SELECCIÓN EN COLUMNAS
-col1, col2 = st.columns(2)
-
-with col1:
-    language = st.selectbox("🌍 Choose your language / Elige tu idioma", ["English", "Español"])
-
 # TEXTS (dependen del idioma elegido)
 texts = {
     "English": {
@@ -45,6 +39,12 @@ texts = {
     }
 }
 
+# SELECCIÓN EN COLUMNAS
+col1, col2 = st.columns(2)
+
+with col1:
+    language = st.selectbox("🌍 Choose your language / Elige tu idioma", ["English", "Español"])
+
 with col2:
     growth_choice = st.radio(texts[language]["growth"], texts[language]["growth_options"])
 
@@ -52,7 +52,6 @@ with col2:
 st.markdown(texts[language]["intro"])
 uploaded_file = st.file_uploader(texts[language]["upload"], type=["pdf"])
 linkedin_url = st.text_input(texts[language]["linkedin"])
-growth_choice = st.radio(texts[language]["growth"], texts[language]["growth_options"])
 
 # OPENROUTER CLIENT
 client = OpenAI(api_key=st.secrets["OPENROUTER_API_KEY"], base_url="https://openrouter.ai/api/v1")
