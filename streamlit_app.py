@@ -106,7 +106,7 @@ Return, as an expert on all the jobs and careers showed on the profile, this inf
 1. Two possible and realistic career paths.
 3. Two roles they could aim for soon with some improvement.
 4. Recommended training or courses of each role (formal or informal).
-5. Estimated salary ranges for each role (based on location or industry). Present this salary information clearly in a table.
+5. Estimated year/salary ranges for each role (based on location and industry). Present this salary information clearly in a table.
 6. Personalized advice to grow professionally according to the recommended roles.
 
 Answer in {language}.
