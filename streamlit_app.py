@@ -24,6 +24,7 @@ texts = {
         "model": "🧠 *Model used:*",
         "only_linkedin": "⚠️ For best results, please upload your CV as well.",
         "error": "❌ Error:",
+        "run": "🔎 Get career guidance"
     },
     "Español": {
         "intro": "Sube tu currículum y deja que la IA te oriente en tu próximo paso profesional.",
@@ -38,6 +39,7 @@ texts = {
         "model": "🧠 *Modelo utilizado:*",
         "only_linkedin": "⚠️ Para mejores resultados, sube también tu currículum.",
         "error": "❌ Error:",
+        "run": "🔎 Recibir asesoramiento"
     }
 }
 
@@ -61,23 +63,6 @@ if linkedin_url and not re.match(r"^https?://(www\.)?linkedin\.com/in/[a-zA-Z0-9
     st.warning("⚠️ Invalid LinkedIn URL format.")
     st.stop()
 
-# --- LECTURA DEL PDF DE FORMA SEGURA ---
-pdf_bytes = uploaded_file.read() if uploaded_file else None
-
-def extract_text_from_pdf(file_bytes):
-    doc = fitz.open(stream=file_bytes, filetype="pdf")
-    return "".join([page.get_text() for page in doc]).strip()
-
-try:
-    new_cv_text = extract_text_from_pdf(pdf_bytes) if pdf_bytes else ""
-except Exception:
-    new_cv_text = ""
-
-# --- RESETEAR ANÁLISIS SI HAY CAMBIOS ---
-if st.session_state.get("cv_data") != new_cv_text or st.session_state.get("linkedin_url") != linkedin_url:
-    st.session_state["cv_analyzed"] = False
-    st.session_state["expand"] = False
-
 # --- CLIENTE OPENAI ---
 client = OpenAI(api_key=st.secrets["OPENROUTER_API_KEY"], base_url="https://openrouter.ai/api/v1")
 FREE_MODELS = [
@@ -87,6 +72,11 @@ FREE_MODELS = [
     "undi95/toppy-m-7b:free",
     "thebloke/zephyr-7b-beta-GGUF:free"
 ]
+
+# --- FUNCIONES ---
+def extract_text_from_pdf(file_bytes):
+    doc = fitz.open(stream=file_bytes, filetype="pdf")
+    return "".join([page.get_text() for page in doc]).strip()
 
 def get_ai_recommendation(cv_text, linkedin_url):
     tone = {
@@ -117,16 +107,15 @@ When reading the profile:
 - Infer possible preferences or aspirations when they are not explicitly stated.
 
 {f"LinkedIn: \"\"\"{linkedin_url}\"\"\"" if linkedin_url else ""}
-
 {f"Resume: \"\"\"{cv_text}\"\"\"" if cv_text else ""}
 
 Return in two parts, with this exact formatting:
 
 ## General Overview
 1. Two possible and realistic career paths.
-3. Two roles they could aim for soon with some improvement.
-4. Recommended training or courses of each role (formal or informal).
-5. Estimated year/salary ranges for each role (based on location and industry). Present this salary information clearly in a table.
+2. Two roles they could aim for soon with some improvement.
+3. Recommended training or courses of each role (formal or informal).
+4. Estimated year/salary ranges for each role (based on location and industry). Present this salary information clearly in a table.
 
 ## Suggested Roles (for deeper exploration)
 - Role 1: [Exact name]
@@ -148,38 +137,44 @@ Return in two parts, with this exact formatting:
                 raise RuntimeError(f"{texts[language]['error']} {e}")
     raise RuntimeError("All models failed or quota exceeded.")
 
-# --- ANÁLISIS PRINCIPAL ---
-if not st.session_state["cv_analyzed"] and (pdf_bytes or linkedin_url):
-    with st.spinner(texts[language]["analyzing"]):
-        try:
-            cv_text = extract_text_from_pdf(pdf_bytes) if pdf_bytes else ""
-            if len(cv_text) < 100 and not linkedin_url:
-                st.warning(texts[language]["short"])
-                st.stop()
+def analyze_and_store():
+    try:
+        cv_text = extract_text_from_pdf(pdf_bytes) if pdf_bytes else ""
+        if len(cv_text) < 100 and not linkedin_url:
+            st.warning(texts[language]["short"])
+            return
 
-            result, model_used = get_ai_recommendation(cv_text, linkedin_url)
-            st.session_state.update({
-                "cv_analyzed": True,
-                "raw_result": result,
-                "model_used": model_used,
-                "cv_data": cv_text,
-                "linkedin_url": linkedin_url,
-                "language": language,
-            })
+        result, model_used = get_ai_recommendation(cv_text, linkedin_url)
+        st.session_state.update({
+            "cv_analyzed": True,
+            "raw_result": result,
+            "model_used": model_used,
+            "cv_data": cv_text,
+            "linkedin_url": linkedin_url,
+            "language": language,
+            "expand": False
+        })
 
-            roles = []
-            for line in result.splitlines():
-                if "Role 1:" in line or "Rol 1:" in line:
-                    roles.append(line.split(":", 1)[-1].strip())
-                elif "Role 2:" in line or "Rol 2:" in line:
-                    roles.append(line.split(":", 1)[-1].strip())
-            roles = list({r for r in roles if len(r) > 3})
-            st.session_state["suggested_roles"] = roles
+        roles = []
+        for line in result.splitlines():
+            if "Role 1:" in line or "Rol 1:" in line:
+                roles.append(line.split(":", 1)[-1].strip())
+            elif "Role 2:" in line or "Rol 2:" in line:
+                roles.append(line.split(":", 1)[-1].strip())
+        roles = list({r for r in roles if len(r) > 3})
+        st.session_state["suggested_roles"] = roles
 
-        except Exception:
-            st.error(texts[language]["error"] + " Something went wrong while processing. Please try again later.")
+    except Exception:
+        st.error(texts[language]["error"] + " Something went wrong while processing. Please try again later.")
 
-# --- MOSTRAR RESULTADO GENERAL ---
+# --- EXTRACCIÓN DE PDF (una vez) ---
+pdf_bytes = uploaded_file.read() if uploaded_file else None
+
+# --- BOTÓN PARA LANZAR ANÁLISIS ---
+if st.button(texts[language]["run"]):
+    analyze_and_store()
+
+# --- MOSTRAR RESULTADOS ---
 if st.session_state["cv_analyzed"]:
     st.success(texts[language]["complete"])
     st.markdown(texts[language]["recommendation"])
@@ -196,7 +191,7 @@ if st.session_state.get("expand"):
     roles_to_show = st.session_state["suggested_roles"][:2]
     tabs = st.tabs(roles_to_show)
 
-    for i, role in enumerate(st.session_state["suggested_roles"]):
+    for i, role in enumerate(roles_to_show):
         with tabs[i]:
             with st.spinner(f"🔎 Getting details for {role}..."):
                 detailed_prompt = f"""
