@@ -3,23 +3,26 @@ import streamlit as st
 import fitz  # PyMuPDF
 from openai import OpenAI
 
-# CONFIGURACIÓN DE LA PÁGINA
+# PAGE CONFIGURATION
 st.set_page_config(page_title="EvolveYourCV", layout="centered")
 
 st.title("📈 EvolveYourCV")
 st.markdown(
-    "Sube tu currículum y deja que la inteligencia artificial te muestre tu próximo paso profesional. "
-    "Todo el análisis es automático, personalizado y gratuito."
+    "Upload your resume and let artificial intelligence guide your next best career steps. "
+    "The analysis is automatic, personalized, and free."
 )
 
-# SUBIDA DE ARCHIVO Y PERFIL DE LINKEDIN
-uploaded_file = st.file_uploader("📄 Sube tu CV (formato PDF)", type=["pdf"])
-linkedin_url = st.text_input("🔗 O pega la URL de tu perfil de LinkedIn (opcional)")
+# FILE UPLOAD & LINKEDIN INPUT
+uploaded_file = st.file_uploader("📄 Upload your CV (PDF format only)", type=["pdf"])
+linkedin_url = st.text_input("🔗 Or paste your LinkedIn profile URL (optional)")
 
-# CLIENTE DE OPENAI (usando secrets en Streamlit Cloud)
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+# OPENROUTER CLIENT (API key set in Streamlit secrets)
+client = OpenAI(
+    api_key=st.secrets["OPENROUTER_API_KEY"],
+    base_url="https://openrouter.ai/api/v1"
+)
 
-# FUNCIÓN PARA EXTRAER TEXTO DE PDF
+# EXTRACT TEXT FROM PDF
 def extract_text_from_pdf(file):
     try:
         doc = fitz.open(stream=file.read(), filetype="pdf")
@@ -28,48 +31,57 @@ def extract_text_from_pdf(file):
             text += page.get_text()
         return text.strip()
     except Exception as e:
-        raise RuntimeError(f"Error al leer el PDF: {e}")
+        raise RuntimeError(f"Could not read the PDF: {e}")
 
-# FUNCIÓN PRINCIPAL QUE HACE LA LLAMADA A OPENAI
+# REQUEST TO OPENROUTER
 def get_ai_recommendation(cv_text, linkedin_url=None):
-    cv_text = cv_text[:6000]  # recortar para evitar límites de tokens
+    cv_text = cv_text[:6000]  # truncate if needed
     prompt = f"""
-Eres un orientador laboral experto y actualizado. Analiza el siguiente perfil profesional:
+You are a professional and up-to-date career advisor. Analyze the following profile:
 
-CV:
+Resume:
 {cv_text}
 
-{f"Perfil de LinkedIn: {linkedin_url}" if linkedin_url else ""}
+{f"LinkedIn profile: {linkedin_url}" if linkedin_url else ""}
 
-A partir de la experiencia, estudios y habilidades detectadas, devuelve lo siguiente:
-1. Dos trayectorias profesionales posibles y realistas.
-2. Puestos a los que podría aspirar pronto si mejora ciertos aspectos.
-3. Cursos o formaciones recomendadas (oficiales o informales).
-4. Estimación de salario por país o sector.
-5. Consejos personalizados para mejorar su empleabilidad y alcanzar el trabajo ideal.
+Provide the following:
+1. Two realistic and meaningful career paths.
+2. Job roles the person could reach soon with some improvements.
+3. Recommended training or courses (formal or informal).
+4. Estimated salary ranges based on country or sector.
+5. Personalized tips to improve their employability and get closer to their dream job.
 
-Escribe como un asesor laboral experto, claro y directo.
+Write clearly, professionally, and as a top-tier career expert.
 """
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7,
-    )
-    return response.choices[0].message.content
+    try:
+        response = client.chat.completions.create(
+            model="mistral/mistral-7b-instruct:free",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        if hasattr(e, 'status_code') and e.status_code == 429:
+            raise RuntimeError(
+                "You have reached the free request limit for now. "
+                "Please wait a few hours and try again, or check your usage on OpenRouter."
+            )
+        else:
+            raise RuntimeError(f"Could not get a response from the model: {e}")
 
-# PROCESAMIENTO DE ENTRADA
+# MAIN LOGIC
 if uploaded_file:
-    with st.spinner("🔎 Analizando tu CV..."):
+    with st.spinner("🔎 Analyzing your CV..."):
         try:
             text = extract_text_from_pdf(uploaded_file)
             if len(text) < 100:
-                st.warning("El texto extraído del CV es muy corto. ¿Estás seguro de que es un documento válido?")
+                st.warning("The extracted text seems too short. Is this a valid resume?")
             else:
                 result = get_ai_recommendation(text, linkedin_url)
-                st.success("✅ Análisis completo")
-                st.markdown("### 🎯 Recomendación personalizada")
+                st.success("✅ Analysis complete")
+                st.markdown("### 🎯 Personalized Career Recommendation")
                 st.markdown(result)
         except Exception as e:
-            st.error(f"❌ Error al procesar el archivo: {e}")
+            st.error(f"❌ Error: {e}")
 elif linkedin_url:
-    st.info("⚠️ Por ahora, el análisis de LinkedIn requiere que subas también el CV para obtener mejores resultados.")
+    st.info("⚠️ For best results, please upload your CV in addition to the LinkedIn profile.")
