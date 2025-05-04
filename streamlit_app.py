@@ -125,12 +125,12 @@ Return this information in two parts:
 
 ## Suggested Roles (for deeper exploration)
 
-List exactly two roles that the user could aim for soon. Present them clearly like this:
+List exactly two roles that the user could aim for soon. Present them clearly with exactly this format:
 
 - Role 1: [Exact name of the first suggested role]
 - Role 2: [Exact name of the second suggested role]
 
-These names will be used to explore each one in more detail later.
+ Important: List "Role 1" and "Role 2" exactly using the format shown. Do not merge them or omit the labels.
 '''
 
     for model in FREE_MODELS:
