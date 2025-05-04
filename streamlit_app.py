@@ -220,3 +220,19 @@ Answer in {st.session_state['language']}. Be direct and practical.
                     except Exception:
                         st.warning(f"⚠️ Could not load data for '{role}'. Skipping...")
                         continue
+
+# --- AVISO LEGAL / DESCARGO ---
+disclaimer = {
+    "English": """
+ℹ️ *This app is a proof of concept using free AI language models via [OpenRouter](https://openrouter.ai). 
+Recommendations are automatically generated and may contain inaccuracies or unsuitable suggestions.
+Please interpret them with professional judgment.*
+""",
+    "Español": """
+ℹ️ *Esta aplicación es una prueba de concepto que utiliza modelos de lenguaje gratuitos a través de [OpenRouter](https://openrouter.ai). 
+Las recomendaciones se generan automáticamente y pueden contener imprecisiones o sugerencias no aplicables.
+Por favor, interpreta la información con criterio profesional.*
+"""
+}
+
+st.caption(disclaimer[language])
