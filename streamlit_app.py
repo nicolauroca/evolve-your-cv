@@ -85,25 +85,25 @@ def get_ai_recommendation(cv_text=None, linkedin_url=None):
     }[language]["Horizontal" if "Horizontal" in growth_choice else "Vertical"]
 
     prompt = f'''
-You are a career advisor. Be {tone}.
+You are an experienced career advisor. Be {tone}.
 Focus on {focus}.
 Use recent and updated information.
 
-Analyze the following profile:
+Read, analyze and understand the following profile:
 
 {f"LinkedIn: {linkedin_url}" if linkedin_url else ""}
 
 {f"Resume: {cv_text}" if cv_text else ""}
 
-Return:
+Return, as an expert on all the jobs and careers showed on the profile, this information:
 1. Two possible and realistic career paths.
-2. Two roles they could right now according to the resume and linkedin profile.
 3. Two roles they could aim for soon with some improvement.
-4. Recommended training or courses of each roles (formal or informal).
-5. Estimated salary ranges foe each roles (based on location or industry).
+4. Recommended training or courses of each role (formal or informal).
+5. Estimated salary ranges for each role (based on location or industry).
 6. Personalized advice to grow professionally according to the recommended roles.
 
 Answer in {language}.
+Answer with good formatting for understanding all the information.
 '''
 
     for model in FREE_MODELS:
@@ -122,7 +122,7 @@ Answer in {language}.
     raise RuntimeError("All models failed or quota exceeded.")
 
 # MAIN EXECUTION
-if uploaded_file or linkedin_url:
+if uploaded_file > '' or linkedin_url > '':
     with st.spinner(texts[language]["analyzing"]):
         try:
             if uploaded_file:
