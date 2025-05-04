@@ -3,26 +3,56 @@ import streamlit as st
 import fitz  # PyMuPDF
 from openai import OpenAI
 
-# PAGE CONFIG
+# PAGE CONFIGURATION
 st.set_page_config(page_title="EvolveYourCV", layout="centered")
 
 st.title("📈 EvolveYourCV")
-st.markdown(
-    "Upload your resume and let artificial intelligence guide your next best career steps. "
-    "The analysis is automatic, personalized, and free."
-)
 
-# FILE UPLOAD & LINKEDIN INPUT
-uploaded_file = st.file_uploader("📄 Upload your CV (PDF format only)", type=["pdf"])
-linkedin_url = st.text_input("🔗 Or paste your LinkedIn profile URL (optional)")
+# LANGUAGE SELECTION
+language = st.selectbox("🌍 Choose your language / Elige tu idioma", ["English", "Español"])
+
+# TEXTS
+texts = {
+    "English": {
+        "intro": "Upload your resume and let AI guide your next best career steps.",
+        "upload": "📄 Upload your CV (PDF only)",
+        "linkedin": "🔗 Or paste your LinkedIn profile URL (optional)",
+        "growth": "What kind of growth are you looking for?",
+        "growth_options": ["Horizontal (explore new areas)", "Vertical (go deeper in your field)"],
+        "analyzing": "🔎 Analyzing your CV...",
+        "short": "The extracted text seems too short. Is this a valid resume?",
+        "complete": "✅ Analysis complete",
+        "recommendation": "### 🎯 Personalized Career Recommendation",
+        "model": "🧠 *Model used:*",
+        "only_linkedin": "⚠️ For best results, please upload your CV as well.",
+        "error": "❌ Error:",
+    },
+    "Español": {
+        "intro": "Sube tu currículum y deja que la IA te oriente en tu próximo paso profesional.",
+        "upload": "📄 Sube tu CV (solo PDF)",
+        "linkedin": "🔗 O pega la URL de tu perfil de LinkedIn (opcional)",
+        "growth": "¿Qué tipo de crecimiento estás buscando?",
+        "growth_options": ["Horizontal (explorar nuevas áreas)", "Vertical (profundizar en tu campo)"],
+        "analyzing": "🔎 Analizando tu CV...",
+        "short": "El texto extraído es muy corto. ¿Es un CV válido?",
+        "complete": "✅ Análisis completado",
+        "recommendation": "### 🎯 Recomendación profesional personalizada",
+        "model": "🧠 *Modelo utilizado:*",
+        "only_linkedin": "⚠️ Para mejores resultados, sube también tu currículum.",
+        "error": "❌ Error:",
+    }
+}
+
+# SHOW UI
+st.markdown(texts[language]["intro"])
+uploaded_file = st.file_uploader(texts[language]["upload"], type=["pdf"])
+linkedin_url = st.text_input(texts[language]["linkedin"])
+growth_choice = st.radio(texts[language]["growth"], texts[language]["growth_options"])
 
 # OPENROUTER CLIENT
-client = OpenAI(
-    api_key=st.secrets["OPENROUTER_API_KEY"],
-    base_url="https://openrouter.ai/api/v1"
-)
+client = OpenAI(api_key=st.secrets["OPENROUTER_API_KEY"], base_url="https://openrouter.ai/api/v1")
 
-# FREE MODELS LIST (in priority order)
+# FREE MODELS LIST
 FREE_MODELS = [
     "mistralai/mistral-7b-instruct:free",
     "openchat/openchat-7b:free",
@@ -33,36 +63,47 @@ FREE_MODELS = [
 
 # PDF TEXT EXTRACTION
 def extract_text_from_pdf(file):
-    try:
-        doc = fitz.open(stream=file.read(), filetype="pdf")
-        text = ""
-        for page in doc:
-            text += page.get_text()
-        return text.strip()
-    except Exception as e:
-        raise RuntimeError(f"Could not read the PDF: {e}")
+    doc = fitz.open(stream=file.read(), filetype="pdf")
+    return "".join([page.get_text() for page in doc]).strip()
 
-# MODEL FALLBACK LOGIC
+# AI RESPONSE FUNCTION
 def get_ai_recommendation(cv_text, linkedin_url=None):
-    cv_text = cv_text[:6000]  # truncate to stay under token limits
-    prompt = f"""
-You are a professional and up-to-date career advisor. Analyze the following profile:
+    tone = {
+        "English": "friendly and professional, speaking directly to the user using 'you'",
+        "Español": "profesional pero cercano, dirigiéndote al usuario de tú"
+    }[language]
+
+    focus = {
+        "English": {
+            "Horizontal": "horizontal growth: explore new paths or roles related to your profile",
+            "Vertical": "vertical growth: advance in your current area or role"
+        },
+        "Español": {
+            "Horizontal": "crecimiento horizontal: explorar nuevos caminos o roles relacionados con tu perfil",
+            "Vertical": "crecimiento vertical: avanzar en tu área o rol actual"
+        }
+    }[language]["Horizontal" if "Horizontal" in growth_choice else "Vertical"]
+
+    prompt = f'''
+You are a career advisor. Be {tone}.
+Focus on {focus}.
+Analyze the following profile:
 
 Resume:
 {cv_text}
 
-{f"LinkedIn profile: {linkedin_url}" if linkedin_url else ""}
+{f"LinkedIn: {linkedin_url}" if linkedin_url else ""}
 
-Provide the following:
-1. Two realistic and meaningful career paths.
-2. Job roles the person could reach soon with some improvements.
+Return:
+1. Two possible and realistic career paths.
+2. Roles they could aim for soon with some improvement.
 3. Recommended training or courses (formal or informal).
-4. Estimated salary ranges based on country or sector.
-5. Personalized tips to improve their employability and get closer to their dream job.
+4. Estimated salary ranges (based on location or industry).
+5. Personalized advice to grow professionally.
 
-Write clearly, professionally, and as a top-tier career expert.
-"""
-    last_error = None
+Answer in {language}.
+'''
+
     for model in FREE_MODELS:
         try:
             response = client.chat.completions.create(
@@ -72,32 +113,26 @@ Write clearly, professionally, and as a top-tier career expert.
             )
             return response.choices[0].message.content, model
         except Exception as e:
-            if hasattr(e, 'status_code') and e.status_code == 429:
-                last_error = e  # quota exceeded, try next model
-            elif hasattr(e, 'status_code') and e.status_code == 400:
-                continue  # invalid model, skip
+            if hasattr(e, 'status_code') and e.status_code in [400, 429]:
+                continue
             else:
-                last_error = e
-                break
-    if last_error:
-        raise RuntimeError(f"All free models failed or quota was exceeded. Last error: {last_error}")
-    else:
-        raise RuntimeError("No models available or reachable at the moment.")
+                raise RuntimeError(f"{texts[language]['error']} {e}")
+    raise RuntimeError("All models failed or quota exceeded.")
 
-# MAIN APP FLOW
+# MAIN EXECUTION
 if uploaded_file:
-    with st.spinner("🔎 Analyzing your CV..."):
+    with st.spinner(texts[language]["analyzing"]):
         try:
-            text = extract_text_from_pdf(uploaded_file)
-            if len(text) < 100:
-                st.warning("The extracted text seems too short. Is this a valid resume?")
+            cv_text = extract_text_from_pdf(uploaded_file)
+            if len(cv_text) < 100:
+                st.warning(texts[language]["short"])
             else:
-                result, model_used = get_ai_recommendation(text, linkedin_url)
-                st.success("✅ Analysis complete")
-                st.markdown(f"### 🎯 Personalized Career Recommendation")
-                st.markdown(f"🧠 *Model used: `{model_used}`*")
+                result, model_used = get_ai_recommendation(cv_text, linkedin_url)
+                st.success(texts[language]["complete"])
+                st.markdown(texts[language]["recommendation"])
+                st.markdown(f"{texts[language]['model']} `{model_used}`")
                 st.markdown(result)
         except Exception as e:
-            st.error(f"❌ Error: {e}")
+            st.error(f"{texts[language]['error']} {e}")
 elif linkedin_url:
-    st.info("⚠️ For best results, please upload your CV in addition to the LinkedIn profile.")
+    st.info(texts[language]["only_linkedin"])
