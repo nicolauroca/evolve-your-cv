@@ -129,12 +129,16 @@ Return in two parts, with this exact formatting, n language "{language}":
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
             )
-            return response.choices[0].message.content, model
+            if response and hasattr(response, "choices") and response.choices:
+                return response.choices[0].message.content, model
+            else:
+                raise RuntimeError("Empty or invalid response from model.")
         except Exception as e:
             if hasattr(e, 'status_code') and e.status_code in [400, 429]:
                 continue
             else:
                 raise RuntimeError(f"{texts[language]['error']} {e}")
+
     raise RuntimeError("All models failed or quota exceeded.")
 
 def analyze_and_store():
