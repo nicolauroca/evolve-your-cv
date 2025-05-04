@@ -122,17 +122,21 @@ Answer with good formatting for understanding all the information.
     raise RuntimeError("All models failed or quota exceeded.")
 
 # MAIN EXECUTION
-if uploaded_file > '' or linkedin_url > '':
+if uploaded_file or linkedin_url:
     with st.spinner(texts[language]["analyzing"]):
         try:
+            cv_text = ""
             if uploaded_file:
                 cv_text = extract_text_from_pdf(uploaded_file)
-                if len(cv_text) < 100:
+                if len(cv_text) < 100 and not linkedin_url:
                     st.warning(texts[language]["short"])
-                result, model_used = get_ai_recommendation(cv_text, linkedin_url)
-                st.success(texts[language]["complete"])
-                st.markdown(texts[language]["recommendation"])
-                st.markdown(f"{texts[language]['model']} `{model_used}`")
-                st.markdown(result)
+                    st.stop()
+            
+            result, model_used = get_ai_recommendation(cv_text, linkedin_url)
+            st.success(texts[language]["complete"])
+            st.markdown(texts[language]["recommendation"])
+            st.markdown(f"{texts[language]['model']} `{model_used}`")
+            st.markdown(result)
+
         except Exception as e:
             st.error(f"{texts[language]['error']} {e}")
