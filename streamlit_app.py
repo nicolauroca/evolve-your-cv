@@ -164,8 +164,9 @@ def analyze_and_store():
         roles = list({r for r in roles if len(r) > 3})
         st.session_state["suggested_roles"] = roles
 
-    except Exception:
+    except Exception as e:
         st.error(texts[language]["error"] + " Something went wrong while processing. Please try again later.")
+        st.warning(f"""{e}""")
 
 # --- EXTRACCIÓN DE PDF (una vez) ---
 pdf_bytes = uploaded_file.read() if uploaded_file else None
