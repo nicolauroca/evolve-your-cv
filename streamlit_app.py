@@ -133,8 +133,8 @@ Return in two parts, with this exact formatting, n language "{language}":
             if response and hasattr(response, "choices") and response.choices:
                 return response.choices[0].message.content, model
             else:
-                if response.error.message:
-                    raise Exception(response.error.message)
+                if response.error:
+                    raise Exception(str(response.error.message))
 
         except Exception as e:
             error_msg = str(e).lower()
