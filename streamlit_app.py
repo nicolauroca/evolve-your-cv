@@ -50,7 +50,7 @@ st.session_state.setdefault("expand", False)
 # --- ENTRADAS ---
 col1, col2 = st.columns(2)
 with col1:
-    language = st.selectbox("🌍 Choose your language / Elige tu idioma", ["English", "Español"])
+    language = st.radio("🌍 Choose your language / Elige tu idioma", ["English", "Español"])
 with col2:
     growth_choice = st.radio(texts[language]["growth"], texts[language]["growth_options"])
 
@@ -171,7 +171,7 @@ def analyze_and_store():
 pdf_bytes = uploaded_file.read() if uploaded_file else None
 
 # --- BOTÓN PARA LANZAR ANÁLISIS ---
-if st.button(texts[language]["run"]):
+if st.button(texts[language]["run"], use_container_width=True):
     with st.spinner(texts[language]["analyzing"]):
         analyze_and_store()
 
@@ -183,7 +183,7 @@ if st.session_state["cv_analyzed"]:
     st.markdown(st.session_state["raw_result"])
 
     if st.session_state.get("suggested_roles"):
-        if st.button("🔍 Expand role-specific recommendations"):
+        if st.button("🔍 Expand role-specific recommendations", use_container_width=True):
             st.session_state["expand"] = True
 
 # --- DETALLES POR ROL ---
