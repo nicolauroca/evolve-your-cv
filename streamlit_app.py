@@ -102,11 +102,11 @@ Read, analyze and understand the following profile:
 
 {f"Resume: {cv_text}" if cv_text else ""}
 
-Return, as an expert on all the jobs and careers showed on the profile, this information:
+Return, as an expert on all the jobs and careers showed on the profile, this information with all the possible detail:
 1. Two possible and realistic career paths.
 3. Two roles they could aim for soon with some improvement.
 4. Recommended training or courses of each role (formal or informal).
-5. Estimated salary ranges for each role (based on location or industry). Present this information clearly in a Markdown table.
+5. Estimated salary ranges for each role (based on location or industry). Present this salary information clearly in a table.
 6. Personalized advice to grow professionally according to the recommended roles.
 
 Answer in {language}.
