@@ -130,17 +130,29 @@ Return in two parts, with this exact formatting, n language "{language}":
                 temperature=0.7,
             )
 
-            st.write(response)
-
             if response and hasattr(response, "choices") and response.choices:
                 return response.choices[0].message.content, model
             else:
                 raise RuntimeError("Empty or invalid response from model.")
+
         except Exception as e:
+            error_msg = str(e).lower()
+
+            # Detectar posibles errores de cuota o límite de uso
+            if "quota" in error_msg or "limit" in error_msg or "usage" in error_msg:
+                raise RuntimeError(
+                    {
+                        "English": "⏳ The APP has reached the daily limit for free AI usage. Please come back in a few hours.",
+                        "Español": "⏳ La APP ha alcanzado el límite diario de uso gratuito. Vuelve en unas horas."
+                    }[language]
+                )
+            
+            # Si es un error típico de límite de peticiones
             if hasattr(e, 'status_code') and e.status_code in [400, 429]:
                 continue
-            else:
-                raise RuntimeError(f"{texts[language]['error']} {e}")
+
+            raise RuntimeError(f"{texts[language]['error']} {e}")
+
 
     raise RuntimeError("All models failed or quota exceeded.")
 
