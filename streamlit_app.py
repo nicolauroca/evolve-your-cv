@@ -59,6 +59,12 @@ st.markdown(texts[language]["intro"])
 uploaded_file = st.file_uploader(texts[language]["upload"], type=["pdf"])
 linkedin_url = st.text_input(texts[language]["linkedin"])
 
+# Detectar cambios en el input y reiniciar el análisis
+if st.session_state.get("cv_data") != (extract_text_from_pdf(uploaded_file) if uploaded_file else "") or \
+   st.session_state.get("linkedin_url") != linkedin_url:
+    st.session_state["cv_analyzed"] = False
+    st.session_state["expand"] = False
+
 # Validación URL LinkedIn
 if linkedin_url and not re.match(r"^https?://(www\.)?linkedin\.com/in/[a-zA-Z0-9\-_/]+/?$", linkedin_url.strip()):
     st.warning("⚠️ Invalid LinkedIn URL format.")
