@@ -91,6 +91,7 @@ def get_ai_recommendation(cv_text=None, linkedin_url=None):
     prompt = f'''
 You are an experienced career advisor. Be {tone}.
 Focus on {focus}.
+Answer in {language}.
 Use recent and updated information.
 
 When reading the profile:
@@ -112,9 +113,6 @@ Return, as an expert on all the jobs and careers showed on the profile, this inf
 4. Recommended training or courses of each role (formal or informal).
 5. Estimated year/salary ranges for each role (based on location and industry). Present this salary information clearly in a table.
 6. Personalized advice to grow professionally according to the recommended roles.
-
-Answer in {language}.
-Answer with good formatting for understanding all the information.
 '''
 
     for model in FREE_MODELS:
