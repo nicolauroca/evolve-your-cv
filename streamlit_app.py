@@ -66,7 +66,6 @@ if linkedin_url and not re.match(r"^https?://(www\.)?linkedin\.com/in/[a-zA-Z0-9
 # --- CLIENTE OPENAI ---
 client = OpenAI(api_key=st.secrets["OPENROUTER_API_KEY"], base_url="https://openrouter.ai/api/v1")
 FREE_MODELS = [
-    "mistralai/mistral-7b-instruct:free",
     "openchat/openchat-7b:free",
     "gryphe/mythomax-l2-13b:free",
     "undi95/toppy-m-7b:free",
